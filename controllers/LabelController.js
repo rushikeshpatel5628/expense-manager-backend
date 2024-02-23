@@ -1,0 +1,1 @@
+const LabelSchema = require('../models/LabelModel');

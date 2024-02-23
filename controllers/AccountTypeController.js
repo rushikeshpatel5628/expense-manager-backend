@@ -1,0 +1,1 @@
+const AccountTypeSchema = require('../models/AccountTypeModel');
