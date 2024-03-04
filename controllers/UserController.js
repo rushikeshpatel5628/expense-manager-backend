@@ -1,4 +1,5 @@
 const UserSchema = require("../models/UserModel");
+const encrypt = require("../utils/Encrypt");
 
 const getAllUsers = async (req, res) => {
   try {
@@ -37,7 +38,15 @@ const getUserById = async (req, res) => {
 
 const addUser = async (req, res) => {
   try {
-    const user = await UserSchema.create(req.body);
+    const hashedPassword = encrypt.encryptPassword(req.body.password);
+    const userObj = {
+      firstName: req.body.firstName,
+      lastName: req.body.lastName,
+      email: req.body.email,
+      password: hashedPassword,
+      role: req.body.role,
+    };
+    const user = await UserSchema.create(userObj);
     res.status(201).json({
       message: "User added",
       flag: 1,
@@ -92,10 +101,53 @@ const deleteUser = async (req, res) => {
   }
 };
 
+const loginUser = async (req, res) => {
+  try {
+    const email = req.body.email;
+    const password = req.body.password;
+
+    const userFromEmail = await UserSchema.findOne({ email: email });
+    if (userFromEmail != null) {
+
+      const flag = encrypt.comparePassword( password, userFromEmail.password );
+      if (flag == true) {
+        res.status(200).json({
+          message: "User login successfully",
+          flag: 1,
+          data: userFromEmail,
+        });
+      } else{
+        res.status(404).json({
+          message: "User not found",
+          flag: -1,
+        });
+      }
+
+
+    }  else{
+      res.status(404).json({
+        message: "User not found",
+        flag: -1,
+      });
+    }
+
+  } catch (error) {
+    res.status(500).json({
+      message: "Error in login user",
+      data: error,
+      flag: -1,
+    });
+
+
+
+  }
+};
+
 module.exports = {
-    addUser,
-    getAllUsers,
-    getUserById,
-    updateUser,
-    deleteUser
-}
+  addUser,
+  getAllUsers,
+  getUserById,
+  updateUser,
+  deleteUser,
+  loginUser
+};

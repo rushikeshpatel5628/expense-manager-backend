@@ -32,6 +32,9 @@ const TransactionSchema = new Schema({
   transactionType: {
     type: String,
   },
+  user: {
+    type: Schema.Types.ObjectId
+  }
 });
 
 module.exports = mongoose.model("Transaction", TransactionSchema);

@@ -1,8 +1,19 @@
 const TransactionSchema = require("../models/TransactionModel");
+const UserSchema = require("../models/UserModel");
+const PayeeSchema = require("../models/PayeeModel");
+const CategorySchema = require("../models/CategoryModel");
+const SubCategorySchema = require("../models/SubCategoryModel");
+const { mailSend } = require("../utils/Mailer");
 
 const getAllTransaction = async (req, res) => {
   try {
-    const transaction = await TransactionSchema.find()
+    // Extract userId from query parameter
+    const userId = req.query.userId;
+
+    // Fetch transactions for the specified user ID
+    const transaction = await TransactionSchema.find({
+      "payee.user._id": userId,
+    })
       .populate("payee")
       .populate("category")
       .populate("subcategory")
@@ -11,6 +22,27 @@ const getAllTransaction = async (req, res) => {
       message: "Transactions fetched",
       flag: 1,
       data: transaction,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Server Error",
+      flag: -1,
+      data: error,
+    });
+  }
+};
+
+const getAllTransactions = async (req, res) => {
+  try {
+    const transactions = await TransactionSchema.find()
+      .populate("payee")
+      .populate("category")
+      .populate("subcategory")
+      .exec();
+    res.status(200).json({
+      message: "Transactions fetched",
+      flag: 1,
+      data: transactions,
     });
   } catch (error) {
     res.status(500).json({
@@ -52,6 +84,90 @@ const getTransactionById = async (req, res) => {
 const addTransaction = async (req, res) => {
   try {
     const transaction = await TransactionSchema.create(req.body);
+
+    // Payee
+    const payeeId = req.body.payee;
+    const payee = await PayeeSchema.findById(payeeId);
+    const payeename = payee.payeeName;
+
+    // category
+    const catagoryId = req.body.category;
+    const category = await CategorySchema.findById(catagoryId);
+    const categoryname = category.categoryName;
+
+    // subcategory
+    const subcategoryId = req.body.subcategory;
+    const subcategory = await SubCategorySchema.findById(subcategoryId);
+    const subcategoryname = subcategory.SubCategoryName;
+
+    const amount = req.body.amount;
+    const expDateTime = req.body.expDateTime;
+    const paymentMethod = req.body.paymentMethod;
+    const status = req.body.status;
+    const description = req.body.description;
+    const transactionType = req.body.transactionType;
+
+
+    // console.log("payee", payeename);
+    // console.log("category", categoryname);
+
+
+    // Email configg
+    const emailSubject = "New Expense Added";
+    const emailText = `Dear User,\n\nYou have added a new expense with the following details:\n\n${JSON.stringify(
+      req.body
+    )}\n\nRegards,\nYour Application`;
+    const emailHtml = `
+    <html>
+      <body>
+        <p>Dear User,</p>
+        <p>You have added a new expense with the following details:</p>
+        <table border="1" cellspacing="0" cellpadding="5">
+          <tr>
+            <td><strong>Payee:</strong></td>
+            <td>${payeename}</td>
+          </tr>
+          <tr>
+            <td><strong>Category:</strong></td>
+            <td>${categoryname}</td>
+          </tr>
+          <tr>
+            <td><strong>Subcategory:</strong></td>
+            <td>${subcategoryname}</td>
+          </tr>
+          <tr>
+            <td><strong>Amount:</strong></td>
+            <td>${amount}</td>
+          </tr>
+          <tr>
+            <td><strong>Date:</strong></td>
+            <td>${expDateTime}</td>
+          </tr>
+          <tr>
+            <td><strong>Payment Method:</strong></td>
+            <td>${paymentMethod}</td>
+          </tr>
+          <tr>
+            <td><strong>Status:</strong></td>
+            <td>${status}</td>
+          </tr>
+          <tr>
+            <td><strong>Description:</strong></td>
+            <td>${description}</td>
+          </tr>
+          <tr>
+            <td><strong>Transaction Type:</strong></td>
+            <td>${transactionType}</td>
+          </tr>
+        </table>
+        <p>Regards,<br>Your Application</p>
+      </body>
+    </html>
+    `;
+    
+
+    mailSend("rpatel0096745@gmail.com", emailSubject, emailText, emailHtml);
+
     res.status(201).json({
       message: "Transaction added",
       flag: 1,
@@ -64,7 +180,58 @@ const addTransaction = async (req, res) => {
       data: error,
     });
   }
+
 };
+
+const getExpense = async (req, res) => {
+  try {
+    const transactions = await TransactionSchema.find({ transactionType: "expense" });
+
+    let sum = 0;
+    transactions.forEach(transaction => {
+      sum += transaction.amount;
+    })
+  
+
+    res.status(200).json({
+      message: "Total expense fetched",
+      flag: 1,
+      data: sum
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Server Error",
+      flag: -1,
+      data: error,
+    });
+  }
+};
+
+const getIncome = async (req, res) => {
+  try {
+    const transactions = await TransactionSchema.find({ transactionType: "income" });
+
+    let sum = 0;
+    transactions.forEach(transaction => {
+      sum += transaction.amount;
+    })
+  
+
+    res.status(200).json({
+      message: "Total income fetched",
+      flag: 1,
+      data: sum
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Server Error",
+      flag: -1,
+      data: error,
+    });
+  }
+};
+
+
 
 const updateTransaction = async (req, res) => {
   const id = req.params.id;
@@ -111,8 +278,11 @@ const deleteTransaction = async (req, res) => {
 
 module.exports = {
   getAllTransaction,
+  getAllTransactions,
   getTransactionById,
   addTransaction,
   updateTransaction,
   deleteTransaction,
+  getIncome,
+  getExpense,
 };
