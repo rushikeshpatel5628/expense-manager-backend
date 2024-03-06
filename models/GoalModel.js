@@ -1,6 +1,8 @@
 const mongoose = require("mongoose");
 
-const Schema = mongoose.Schema({
+const Schema = mongoose.Schema;
+
+const GoalSchema = new Schema({
   goalName: {
     type: String,
   },
@@ -14,3 +16,5 @@ const Schema = mongoose.Schema({
     type: Date,
   }
 });
+
+module.exports = mongoose.model("Goal", GoalSchema);

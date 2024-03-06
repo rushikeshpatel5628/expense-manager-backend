@@ -23,6 +23,7 @@ const categoryRoutes = require("./routes/CategoryRoutes");
 const subcategoryRoutes = require("./routes/SubCategoryRoutes");
 const payeeRoutes = require("./routes/PayeeRoutes");
 const transcationRoutes = require("./routes/TransactionRoutes");
+const goalRoutes = require("./routes/GoalRoutes");
 
 // providing to server all routes
 app.use("/accounts", accountRoutes);
@@ -32,6 +33,7 @@ app.use("/categories", categoryRoutes);
 app.use("/categories", subcategoryRoutes);
 app.use("/payees", payeeRoutes);
 app.use("/transactions", transcationRoutes);
+app.use("/goals", goalRoutes)
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

@@ -17,6 +17,8 @@ const getAllTransaction = async (req, res) => {
       .populate("payee")
       .populate("category")
       .populate("subcategory")
+      .populate("user")
+      .populate("goal")
       .exec();
     res.status(200).json({
       message: "Transactions fetched",
@@ -38,6 +40,8 @@ const getAllTransactions = async (req, res) => {
       .populate("payee")
       .populate("category")
       .populate("subcategory")
+      .populate("user")
+      .populate("goal")
       .exec();
     res.status(200).json({
       message: "Transactions fetched",
@@ -60,6 +64,8 @@ const getTransactionById = async (req, res) => {
       .populate("payee")
       .populate("category")
       .populate("subcategory")
+      .populate("user")
+      .populate("goal")
       .exec();
     if (!transaction) {
       return res.status(404).json({
@@ -81,6 +87,45 @@ const getTransactionById = async (req, res) => {
   }
 };
 
+const getAllTransactionsByGoal = async (req, res) => {
+  // Check for missing or invalid goal ID
+  const goalId = req.params.id;
+ 
+
+  try {
+    // console.log("Query being executed:", { goal: { $oid: goalId } }); // Log the query for inspection
+
+    const transactions = await TransactionSchema.find({ goal: goalId })
+      .populate("payee")
+      .populate("category")
+      .populate("subcategory")
+      .populate("user")
+      .populate("goal")
+      .exec();
+
+    if (transactions.length === 0) {
+      return res.status(404).json({
+        message: "No transactions found for this goal ID.",
+      });
+    } else {
+      res.status(200).json({
+        message: "Transactions fetched",
+        flag: 1,
+        data: transactions,
+      });
+    }
+  } catch (error) {
+    console.error("Error:", error); // Log the error for detailed debugging
+    res.status(500).json({
+      message: "Server Error",
+      flag: -1,
+      data: error,
+    });
+  }
+};
+
+
+
 const addTransaction = async (req, res) => {
   try {
     const transaction = await TransactionSchema.create(req.body);
@@ -100,17 +145,21 @@ const addTransaction = async (req, res) => {
     const subcategory = await SubCategorySchema.findById(subcategoryId);
     const subcategoryname = subcategory.SubCategoryName;
 
+    //user
+    const userId = req.body.user;
+    const user = await UserSchema.findById(userId);
+    const userEmail = user.email;
+    const userName = user.firstName;
+
     const amount = req.body.amount;
     const expDateTime = req.body.expDateTime;
     const paymentMethod = req.body.paymentMethod;
     const status = req.body.status;
     const description = req.body.description;
     const transactionType = req.body.transactionType;
-
-
+    const title = req.body.title;
     // console.log("payee", payeename);
     // console.log("category", categoryname);
-
 
     // Email configg
     const emailSubject = "New Expense Added";
@@ -120,9 +169,13 @@ const addTransaction = async (req, res) => {
     const emailHtml = `
     <html>
       <body>
-        <p>Dear User,</p>
+        <p>Dear ${userName},</p>
         <p>You have added a new expense with the following details:</p>
         <table border="1" cellspacing="0" cellpadding="5">
+          <tr>
+            <td><strong>Payee:</strong></td>
+            <td>${title}</td>
+          </tr>
           <tr>
             <td><strong>Payee:</strong></td>
             <td>${payeename}</td>
@@ -164,9 +217,8 @@ const addTransaction = async (req, res) => {
       </body>
     </html>
     `;
-    
 
-    mailSend("rpatel0096745@gmail.com", emailSubject, emailText, emailHtml);
+    mailSend(userEmail, emailSubject, emailText, emailHtml);
 
     res.status(201).json({
       message: "Transaction added",
@@ -180,23 +232,23 @@ const addTransaction = async (req, res) => {
       data: error,
     });
   }
-
 };
 
 const getExpense = async (req, res) => {
   try {
-    const transactions = await TransactionSchema.find({ transactionType: "expense" });
+    const transactions = await TransactionSchema.find({
+      transactionType: "expense",
+    });
 
     let sum = 0;
-    transactions.forEach(transaction => {
+    transactions.forEach((transaction) => {
       sum += transaction.amount;
-    })
-  
+    });
 
     res.status(200).json({
       message: "Total expense fetched",
       flag: 1,
-      data: sum
+      data: sum,
     });
   } catch (error) {
     res.status(500).json({
@@ -209,18 +261,19 @@ const getExpense = async (req, res) => {
 
 const getIncome = async (req, res) => {
   try {
-    const transactions = await TransactionSchema.find({ transactionType: "income" });
+    const transactions = await TransactionSchema.find({
+      transactionType: "income",
+    });
 
     let sum = 0;
-    transactions.forEach(transaction => {
+    transactions.forEach((transaction) => {
       sum += transaction.amount;
-    })
-  
+    });
 
     res.status(200).json({
       message: "Total income fetched",
       flag: 1,
-      data: sum
+      data: sum,
     });
   } catch (error) {
     res.status(500).json({
@@ -230,8 +283,6 @@ const getIncome = async (req, res) => {
     });
   }
 };
-
-
 
 const updateTransaction = async (req, res) => {
   const id = req.params.id;
@@ -280,6 +331,7 @@ module.exports = {
   getAllTransaction,
   getAllTransactions,
   getTransactionById,
+  getAllTransactionsByGoal,
   addTransaction,
   updateTransaction,
   deleteTransaction,
