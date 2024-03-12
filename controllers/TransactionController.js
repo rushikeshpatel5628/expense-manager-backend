@@ -36,7 +36,8 @@ const getAllTransaction = async (req, res) => {
 
 const getAllTransactions = async (req, res) => {
   try {
-    const transactions = await TransactionSchema.find()
+    const userId = req.params.id;
+    const transactions = await TransactionSchema.find({ user: userId})
       .populate("payee")
       .populate("category")
       .populate("subcategory")
@@ -298,7 +299,7 @@ const updateTransaction = async (req, res) => {
     } else {
       res.status(201).json({
         message: "Updated transaction!",
-      });
+      });nod
     }
   } catch (error) {
     res.status(500).json({
