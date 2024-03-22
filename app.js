@@ -24,6 +24,9 @@ const subcategoryRoutes = require("./routes/SubCategoryRoutes");
 const payeeRoutes = require("./routes/PayeeRoutes");
 const transcationRoutes = require("./routes/TransactionRoutes");
 const goalRoutes = require("./routes/GoalRoutes");
+const groupRoutes = require("./routes/GroupRoutes");
+const groupExpenseRoutes = require("./routes/GroupExpenseRoutes");
+
 
 // providing to server all routes
 app.use("/accounts", accountRoutes);
@@ -33,7 +36,9 @@ app.use("/categories", categoryRoutes);
 app.use("/categories", subcategoryRoutes);
 app.use("/payees", payeeRoutes);
 app.use("/transactions", transcationRoutes);
-app.use("/goals", goalRoutes)
+app.use("/goals", goalRoutes);
+app.use("/groups", groupRoutes);
+app.use("/groupexp", groupExpenseRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

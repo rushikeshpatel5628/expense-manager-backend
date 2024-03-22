@@ -19,10 +19,10 @@ const TransactionSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: "Category",
   },
-  subcategory: {
-    type: Schema.Types.ObjectId,
-    ref: "SubCategory",
-  },
+  // subcategory: {
+  //   type: Schema.Types.ObjectId,
+  //   ref: "SubCategory",
+  // },
   paymentMethod: {
     type: String,
   },

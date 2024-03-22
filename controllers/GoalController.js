@@ -1,4 +1,5 @@
 const GoalSchema = require("../models/GoalModel");
+const TransactionSchema = require("../models/TransactionModel");
 
 const getAllGoals = async (req, res) => {
   try {
@@ -24,7 +25,7 @@ const getGoalById = async (req, res) => {
     const goal = await GoalSchema.findById(id);
     if (!goal) {
       return res.status(404).json({
-        message: "No transaction with this ID was found.",
+        message: "No goals with this ID was found.",
       });
     } else {
       res.status(200).json({
@@ -41,6 +42,14 @@ const getGoalById = async (req, res) => {
     });
   }
 };
+
+const getGoalByUserId = async(req, res) => {
+  try {
+    // const 
+  } catch (error) {
+    
+  }
+}
 
 const addGoal = async (req, res) => {
   try {
@@ -62,7 +71,9 @@ const addGoal = async (req, res) => {
 const deleteGoal = async (req, res) => {
   const id = req.params.id;
   try {
+    const TransactionInGoal = await TransactionSchema.deleteMany({ goal: id });
     const removedGoal = await GoalSchema.findByIdAndDelete(id);
+
     if (!removedGoal) {
       return res
         .status(404)
@@ -71,6 +82,7 @@ const deleteGoal = async (req, res) => {
       res.status(200).json({ message: "deleted transaction" });
     }
   } catch (err) {
+    console.error(err)
     res.status(500).json({
       message: err,
     });
@@ -100,9 +112,9 @@ const updateGoal = async (req, res) => {
 };
 
 module.exports = {
-  getAllGoals, 
+  getAllGoals,
   getGoalById,
-  addGoal, 
+  addGoal,
   deleteGoal,
-  updateGoal
-}
+  updateGoal,
+};

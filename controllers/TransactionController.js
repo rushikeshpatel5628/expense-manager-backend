@@ -2,45 +2,16 @@ const TransactionSchema = require("../models/TransactionModel");
 const UserSchema = require("../models/UserModel");
 const PayeeSchema = require("../models/PayeeModel");
 const CategorySchema = require("../models/CategoryModel");
-const SubCategorySchema = require("../models/SubCategoryModel");
+const GoalSchema = require("../models/GoalModel");
+// const SubCategorySchema = require("../models/SubCategoryModel");
 const { mailSend } = require("../utils/Mailer");
-
-const getAllTransaction = async (req, res) => {
-  try {
-    // Extract userId from query parameter
-    const userId = req.query.userId;
-
-    // Fetch transactions for the specified user ID
-    const transaction = await TransactionSchema.find({
-      "payee.user._id": userId,
-    })
-      .populate("payee")
-      .populate("category")
-      .populate("subcategory")
-      .populate("user")
-      .populate("goal")
-      .exec();
-    res.status(200).json({
-      message: "Transactions fetched",
-      flag: 1,
-      data: transaction,
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: "Server Error",
-      flag: -1,
-      data: error,
-    });
-  }
-};
 
 const getAllTransactions = async (req, res) => {
   try {
     const userId = req.params.id;
-    const transactions = await TransactionSchema.find({ user: userId})
+    const transactions = await TransactionSchema.find({ user: userId })
       .populate("payee")
       .populate("category")
-      .populate("subcategory")
       .populate("user")
       .populate("goal")
       .exec();
@@ -64,7 +35,6 @@ const getTransactionById = async (req, res) => {
     const transaction = await TransactionSchema.findById(id)
       .populate("payee")
       .populate("category")
-      .populate("subcategory")
       .populate("user")
       .populate("goal")
       .exec();
@@ -91,15 +61,13 @@ const getTransactionById = async (req, res) => {
 const getAllTransactionsByGoal = async (req, res) => {
   // Check for missing or invalid goal ID
   const goalId = req.params.id;
- 
 
   try {
-    // console.log("Query being executed:", { goal: { $oid: goalId } }); // Log the query for inspection
+    
 
     const transactions = await TransactionSchema.find({ goal: goalId })
       .populate("payee")
       .populate("category")
-      .populate("subcategory")
       .populate("user")
       .populate("goal")
       .exec();
@@ -125,11 +93,42 @@ const getAllTransactionsByGoal = async (req, res) => {
   }
 };
 
-
-
 const addTransaction = async (req, res) => {
   try {
-    const transaction = await TransactionSchema.create(req.body);
+    let objectToSubmit;
+    console.log("Goal name....", req.body.goal);
+    if (req.body.goal === undefined || req.body.goal === "") {
+      // create a new object and assign it to objecttosubmit
+      objectToSubmit = {
+        title: req.body.title,
+        amount: req.body.amount,
+        expDateTime: req.body.expDateTime,
+        payee: req.body.payee,
+        category: req.body.category,
+        paymentMethod: req.body.paymentMethod,
+        status: req.body.status,
+        description: req.body.description,
+        transactionType: req.body.transactionType,
+        user: req.body.user,
+        
+      };
+    } else {
+      objectToSubmit = {
+        title: req.body.title,
+        amount: req.body.amount,
+        expDateTime: req.body.expDateTime,
+        payee: req.body.payee,
+        category: req.body.category,
+        paymentMethod: req.body.paymentMethod,
+        status: req.body.status,
+        description: req.body.description,
+        transactionType: req.body.transactionType,
+        user: req.body.user,
+        goal: req.body.goal
+      };
+    }
+
+    const transaction = await TransactionSchema.create(objectToSubmit);
 
     // Payee
     const payeeId = req.body.payee;
@@ -142,9 +141,9 @@ const addTransaction = async (req, res) => {
     const categoryname = category.categoryName;
 
     // subcategory
-    const subcategoryId = req.body.subcategory;
-    const subcategory = await SubCategorySchema.findById(subcategoryId);
-    const subcategoryname = subcategory.SubCategoryName;
+    // const subcategoryId = req.body.subcategory;
+    // const subcategory = await SubCategorySchema.findById(subcategoryId);
+    // const subcategoryname = subcategory.SubCategoryName;
 
     //user
     const userId = req.body.user;
@@ -186,10 +185,6 @@ const addTransaction = async (req, res) => {
             <td>${categoryname}</td>
           </tr>
           <tr>
-            <td><strong>Subcategory:</strong></td>
-            <td>${subcategoryname}</td>
-          </tr>
-          <tr>
             <td><strong>Amount:</strong></td>
             <td>${amount}</td>
           </tr>
@@ -221,12 +216,40 @@ const addTransaction = async (req, res) => {
 
     mailSend(userEmail, emailSubject, emailText, emailHtml);
 
+     // Check if the goal's maximum amount is exceeded
+     if (req.body.goal) {
+      const goalId = req.body.goal;
+      const goal = await GoalSchema.findById(goalId);
+      const totalSpent = await TransactionSchema.aggregate([
+        { $match: { goal: goalId } },
+        { $group: { _id: null, total: { $sum: "$amount" } } }
+      ]);
+      const totalAmountSpent = totalSpent.length > 0 ? totalSpent[0].total : 0;
+
+      if (totalAmountSpent > goal.maxamount) {
+        // Send email to the user
+        // const userEmail = userEmail; // Assuming user information is available in req.user
+        const emailSubject = "Maximum Amount Exceeded";
+        const emailText = `Dear User,\n\nYou have exceeded the maximum amount for the goal '${goal.goalName}'.`;
+        const emailHtml = `
+          <html>
+            <body>
+              <p>Dear User,</p>
+              <p>You have exceeded the maximum amount for the goal '${goal.goalName}'.</p>
+            </body>
+          </html>
+        `;
+        await sendEmail(userEmail, emailSubject, emailText, emailHtml);
+      }
+    }
+
     res.status(201).json({
       message: "Transaction added",
       flag: 1,
       data: transaction,
     });
   } catch (error) {
+    console.error("Error adding transaction:", error);
     res.status(500).json({
       message: "Server Error",
       flag: -1,
@@ -287,10 +310,40 @@ const getIncome = async (req, res) => {
 
 const updateTransaction = async (req, res) => {
   const id = req.params.id;
+  let objectToSubmit;
+  if (req.body.goal === undefined || req.body.goal === "") {
+    objectToSubmit = {
+      title: req.body.title,
+      amount: req.body.amount,
+      expDateTime: req.body.expDateTime,
+      payee: req.body.payee,
+      category: req.body.category,
+      paymentMethod: req.body.paymentMethod,
+      status: req.body.status,
+      description: req.body.description,
+      transactionType: req.body.transactionType,
+      user: req.body.user,
+    };
+  } else {
+    objectToSubmit = {
+      title: req.body.title,
+      amount: req.body.amount,
+      expDateTime: req.body.expDateTime,
+      payee: req.body.payee,
+      category: req.body.category,
+      paymentMethod: req.body.paymentMethod,
+      status: req.body.status,
+      description: req.body.description,
+      transactionType: req.body.transactionType,
+      user: req.body.user,
+      goal: req.body.goal
+    };
+  }
+
   try {
     const updateTransaction = await TransactionSchema.findByIdAndUpdate(
       id,
-      req.body
+      objectToSubmit
     );
     if (!updateTransaction) {
       return res.status(404).json({
@@ -299,7 +352,7 @@ const updateTransaction = async (req, res) => {
     } else {
       res.status(201).json({
         message: "Updated transaction!",
-      });nod
+      });
     }
   } catch (error) {
     res.status(500).json({
@@ -309,6 +362,7 @@ const updateTransaction = async (req, res) => {
     });
   }
 };
+
 
 const deleteTransaction = async (req, res) => {
   const id = req.params.id;
@@ -329,7 +383,6 @@ const deleteTransaction = async (req, res) => {
 };
 
 module.exports = {
-  getAllTransaction,
   getAllTransactions,
   getTransactionById,
   getAllTransactionsByGoal,
