@@ -4,7 +4,12 @@ const { mailSend } = require("../utils/Mailer");
 
 const createGroup = async (req, res) => {
   try {
-    const group = await GroupSchema.create(req.body);
+    // const group = await GroupSchema.create(req.body);
+    const group = await GroupSchema.create({
+      ...req.body,
+      members: [{ userId: req.body.creator }],
+    });
+    
     res.status(201).json({
       message: "Group created",
       flag: 1,
