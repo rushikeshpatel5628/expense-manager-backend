@@ -1,6 +1,9 @@
 const mongoose = require('mongoose');
 
 const GroupExpenseSchema = new mongoose.Schema({
+  title: {
+    type: String
+  },
   amount: {
     type: Number,
     // required: true
@@ -9,7 +12,8 @@ const GroupExpenseSchema = new mongoose.Schema({
     type: String
   },
   category: {
-    type: String
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Category'
   },
   paidBy: {
     type: mongoose.Schema.Types.ObjectId,
@@ -20,7 +24,15 @@ const GroupExpenseSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Group',
     // required: true
-  }
+  },
+  expDate: {
+    type: Date,
+    default: Date.now(),
+  },
+  paymentMethod: {
+    type: String,
+    default: 'cash',
+  },
 });
 
 module.exports = mongoose.model('GroupExpense', GroupExpenseSchema);

@@ -1,13 +1,14 @@
+const mongoose = require("mongoose");
 const GroupSchema = require("../models/GroupModel");
 const UserSchema = require("../models/UserModel");
 const { mailSend } = require("../utils/Mailer");
 
 const createGroup = async (req, res) => {
   try {
-    // const group = await GroupSchema.create(req.body);
+    console.log("creator....", req.body.creator);
     const group = await GroupSchema.create({
       ...req.body,
-      members: [{ userId: req.body.creator }],
+      members: [ req.body.creator ],
     });
     
     res.status(201).json({
@@ -126,6 +127,7 @@ const inviteUserToJoinGroup = async (req, res) => {
   }
 };
 
+// Handle invitation
 const handleInvitation = async (req, res) => {
   const { userId } = req.params;
   const groupId = req.body.groupId;
@@ -150,11 +152,39 @@ const handleInvitation = async (req, res) => {
   }
 };
 
+// Handle leaving group
+const handleLeaveGroup = async (req, res) => {
+  const { userId } = req.params;
+  const { groupId } = req.params;
+  
+  try {
+    // Remove user from group members
+    const group = await GroupSchema.findByIdAndUpdate(
+      groupId,
+      { $pull: { members: userId } },
+      { new: true }
+    );
+
+    if (!group) {
+      return res.status(404).json({ success: false, error: "Group not found" });
+    }
+
+    res
+      .status(200)
+      .json({ success: true, message: "Left group successfully" });
+  } catch (error) {
+    console.error("Error leaving group:", error);
+    res.status(500).json({ success: false, error: "Internal Server Error" });
+  }
+};
+
+
 module.exports = {
   getAllGroups,
   createGroup,
   inviteUserToJoinGroup,
   handleInvitation,
+  handleLeaveGroup,
   getAllGroupsByUserId,
   getGroupById
 };
