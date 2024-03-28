@@ -3,7 +3,23 @@ const GroupSchema = require("../models/GroupModel");
 
 const createGroupExpenses = async (req, res) => {
   try {
-    const newExpense = await GroupExpenseSchema.create(req.body);
+    // const groupId = req.params.groupid;
+    // console.log("groupId....", groupId);
+
+    let objectToSubmit = {
+      title: req.body.title,
+      amount: req.body.amount,
+      description: req.body.description,
+      category: req.body.category,
+      paidBy: req.body.paidBy,
+      group: req.body.group,
+      expDate: req.body.expDate,
+      paymentMethod: req.body.paymentMethod,
+    }
+
+
+
+    const newExpense = await GroupExpenseSchema.create(objectToSubmit);
 
     // Update the corresponding Group document to include the expense
     await GroupSchema.findByIdAndUpdate(req.body.group, {
