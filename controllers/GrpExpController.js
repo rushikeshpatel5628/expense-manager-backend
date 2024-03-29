@@ -62,6 +62,30 @@ const getAllGroupExpenses = async (req, res) => {
   }
 };
 
+// get group expenses by expense id
+const getGroupexpenseById = async(req, res)=> {
+  const expenseId = req.params.expenseid;
+  try {
+    const expense = await GroupExpenseSchema.findById(expenseId).populate("paidBy")
+    .populate("group")
+    .populate("category");
+
+    res.status(200).json({
+      message: "Expenses fetched",
+      flag: 1,
+      data: expense,
+    });
+
+  } catch (error) {
+    console.log("error....", error)
+    res.status(500).json({
+      message: "Server Error",
+      flag: -1,
+      data: error,
+    });
+  }
+}
+
 // Get group expenses by group id
 const getGroupExpensesByGroupId = async (req, res) => {
   const groupId = req.params.groupid;
@@ -77,6 +101,7 @@ const getGroupExpensesByGroupId = async (req, res) => {
         message: "Group id not found",
       });
     } else {
+      // console.log(groupExpense)
       res.status(200).json({
         flag: 1,
         message: "Group expense with group id fetched",
@@ -91,6 +116,48 @@ const getGroupExpensesByGroupId = async (req, res) => {
     });
   }
 };
+
+// Update group expense by id
+const updateGroupExpense = async(req, res)=> {
+  const expenseId = req.params.id;
+
+  let objectToSubmit = {
+    title: req.body.title,
+    amount: req.body.amount,
+    description: req.body.description,
+    category: req.body.category,
+    paidBy: req.body.paidBy,
+    group: req.body.group,
+    // expDate: req.body.expDate,
+    paymentMethod: req.body.paymentMethod,
+  }
+
+  try {
+    const updateExpense = await GroupExpenseSchema.findByIdAndUpdate(
+      expenseId,
+      objectToSubmit
+    );
+    if (!updateExpense) {
+      return res.status(404).json({
+        message: "No expense with this ID was found.",
+      });
+    } else {
+      res.status(201).json({
+        flag: 1,
+        message: "Updated expense!",
+      });
+    }
+    
+  } catch (error) {
+    console.log("error", error)
+    res.status(500).json({
+      message: "Server Error",
+      flag: -1,
+      data: error,
+    });
+  }
+}
+
 
 // Delete group expense by id
 const deleteExpense = async (req, res) => {
@@ -127,7 +194,9 @@ const deleteExpense = async (req, res) => {
 
 module.exports = {
   getAllGroupExpenses,
+  getGroupexpenseById,
   getGroupExpensesByGroupId,
   createGroupExpenses,
+  updateGroupExpense,
   deleteExpense,
 };
