@@ -129,7 +129,7 @@ const inviteUserToJoinGroup = async (req, res) => {
 
 // Handle invitation
 const handleInvitation = async (req, res) => {
-  const { userId } = req.params;
+  const userId  = req.params.userId;
   const groupId = req.body.groupId;
   try {
     // Add user to group members
