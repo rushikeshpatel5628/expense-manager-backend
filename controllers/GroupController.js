@@ -121,9 +121,10 @@ const inviteUserToJoinGroup = async (req, res) => {
     <p>Group ID: ${groupId}</p>
   `;
     mailSend(userEmail, emailSubject, emailText, emailHtml);
+    res.status(200).json({flag: 1, message: `An invitation has been sent to ${userEmail}`});
   } catch (error) {
     console.error("Error sending invitation:", error);
-    res.status(500).json({ success: false, error: "Internal Server Error" });
+    res.status(500).json({ flag: -1, error: "Internal Server Error" });
   }
 };
 
