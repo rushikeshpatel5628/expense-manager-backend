@@ -6,5 +6,7 @@ router.post('/user', userController.addUser);
 router.put('/user/:id', userController.updateUser);
 router.delete('/user/:id', userController.deleteUser);
 router.post('/user/login', userController.loginUser);
+router.post('/user/isuserexist', userController.isUserExist);
+router.post('/user/resetpassword', userController.resetPassword);
 
 module.exports = router;

@@ -1,5 +1,7 @@
 const UserSchema = require("../models/UserModel");
 const encrypt = require("../utils/Encrypt");
+const mailUtil = require("../utils/Mailer");
+const OtpSchema = require("../models/OtpModel");
 
 const getAllUsers = async (req, res) => {
   try {
@@ -108,38 +110,210 @@ const loginUser = async (req, res) => {
 
     const userFromEmail = await UserSchema.findOne({ email: email });
     if (userFromEmail != null) {
-
-      const flag = encrypt.comparePassword( password, userFromEmail.password );
+      const flag = encrypt.comparePassword(password, userFromEmail.password);
       if (flag == true) {
         res.status(200).json({
           message: "User login successfully",
           flag: 1,
           data: userFromEmail,
         });
-      } else{
+      } else {
         res.status(404).json({
           message: "User not found",
           flag: -1,
         });
       }
-
-
-    }  else{
+    } else {
       res.status(404).json({
-        message: "User not found",
+        message: "User not found 22",
         flag: -1,
       });
     }
-
   } catch (error) {
     res.status(500).json({
       message: "Error in login user",
       data: error,
       flag: -1,
     });
+  }
+};
+
+// const resetPassword = async (req, res) => {
+//   const email = req.body.email;
+//   const password = req.body.password;
+//   const otp = req.body.otp;
+//   const time = req.body.time;
+
+//   console.log("email....", email);
+//   console.log("password....", password);
+
+//   const getUser = await OtpSchema.findOne({ email: email })
+
+//   if (getUser) {
+//     if (getUser.otp === otp) {
+//       //gettime ffrom otp object....
+//       //compsre for 30 seconds...
+//       const timeDifference = time - getUser.time;
+//       const is30SecondsGap = timeDifference >= 30000;
+//       if (is30SecondsGap) {
+//         res.status(401).json({
+//           message: "otp is expired!!",
+//           flag: -1,
+//         });
+//       } else {
+//         const hashedPassword = encrypt.encryptPassword(password);
+
+//         try {
+//           const updateUser = await UserSchema.findOneAndUpdate(
+//             { email: email },
+//             { $set: { password: hashedPassword } }
+//           );
+//           //password rest...
+//           //delete otp record....
+//           await OtpSchema.findOneAndDelete({ email: email });
+
+//           res.status(200).json({
+//             message: "Password updated successfully",
+//             flag: 1,
+//           });
+//         } catch (err) {
+//           console.log(err);
+//           res.status(500).json({
+//             message: "Error in updating password",
+//             flag: -1,
+//           });
+//         }
+//       }
+//     } else {
+//       //delete otp record....
+//       res.status(401).json({
+//         message: "invalid otp..",
+//         flag: -1,
+//       });
+//     }
+//   } else {
+//     //delete otp record....
+//     res.status(500).json({
+//       message: "error...",
+//       flag: -1,
+//     });
+//   }
+// };
+
+const resetPassword = async (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+  const otp = req.body.otp;
+  const time = req.body.time;
+
+  console.log("email....", email);
+  console.log("password....", password);
+  console.log("otp....", otp);
+  console.log("time....", time);
+
+  const getUser = await OtpSchema.findOne({ email: email });
+
+  console.log("getUser....", getUser);
+
+  if (getUser) {
+    if (getUser.otp === otp) {
+      //gettime ffrom otp object....
+      //compsre for 30 seconds...
+      const timeDifference = time - getUser.time;
+      console.log("timeDifference....", timeDifference);
+      const is30SecondsGap = timeDifference >= 30000;
+      console.log("is30SecondsGap....", is30SecondsGap);
+      if (is30SecondsGap) {
+        console.log("OTP is expired!!!");
+        await OtpSchema.findOneAndDelete({ email: email });
+        res.status(401).json({
+          message: "otp is expired!!",
+          flag: -1,
+        });
+      } else { 
+        const hashedPassword = encrypt.encryptPassword(password);
+
+        try {
+          const updateUser = await UserSchema.findOneAndUpdate(
+            { email: email },
+            { $set: { password: hashedPassword } }
+          );
+          console.log("Password updated successfully");
+          //password rest...
+          //delete otp record....
+          await OtpSchema.findOneAndDelete({ email: email });
+
+          res.status(200).json({
+            message: "Password updated successfully",
+            flag: 1,
+          });
+        } catch (err) {
+          console.error(err);
+          res.status(500).json({
+            message: "Error in updating password",
+            flag: -1,
+          });
+        }
+      }
+    } else {
+      //delete otp record....
+      await OtpSchema.findOneAndDelete({ email: email });
+      console.log("Invalid OTP!!!");
+      res.status(403).json({
+        message: "Invalid otp..",
+        flag: -1,
+      });
+    }
+  } else {
+    //delete otp record....
+    console.log("Error in retrieving OTP from database!!!");
+    res.status(500).json({
+      message: "Error...",
+      flag: -1,
+    });
+  }
+};
 
 
+const isUserExist = async (req, res) => {
+  const email = req.body.email;
 
+  try {
+    const userbyemail = await UserSchema.findOne({ email: email });
+    if (userbyemail) {
+      //employee found
+      //otp generation -->mail
+      //time
+      //otp save in db
+      const otp = Math.floor(1000 + Math.random() * 9000);
+      const mailRes = await mailUtil.mailSend(
+        userbyemail.email,
+        "OTP for reset password",
+        "OTP for password generation",
+        `Your OTP is ${otp}`
+      );
+      const otpObj = {
+        otp: otp,
+        email: userbyemail.email,
+        status: true,
+      };
+      await OtpSchema.create(otpObj);
+      console.log("otp....", otp)
+      res.status(200).json({
+        message: "User found",
+        flag: 1,
+        data: userbyemail,
+      });
+    } else {
+      res.status(404).json({
+        message: "User not found",
+        flag: -1,
+      });
+    }
+  } catch (error) {
+    res.status(500).json({
+      message: "Error in getting user by email",
+    });
   }
 };
 
@@ -149,5 +323,7 @@ module.exports = {
   getUserById,
   updateUser,
   deleteUser,
-  loginUser
+  loginUser,
+  isUserExist,
+  resetPassword,
 };
