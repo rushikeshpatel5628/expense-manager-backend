@@ -7,4 +7,3 @@ router.put('/payee/:id', payeeController.updatePayee);
 router.delete('/payee/:id', payeeController.deletePayee);
 
 module.exports = router;
-
