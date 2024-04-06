@@ -3,6 +3,7 @@ const UserSchema = require("../models/UserModel");
 const PayeeSchema = require("../models/PayeeModel");
 const CategorySchema = require("../models/CategoryModel");
 const GoalSchema = require("../models/GoalModel");
+const UserCategorySchema = require("../models/UserCategoryModel");
 // const SubCategorySchema = require("../models/SubCategoryModel");
 const { mailSend } = require("../utils/Mailer");
 
@@ -137,7 +138,7 @@ const addTransaction = async (req, res) => {
 
     // category
     const catagoryId = req.body.category;
-    const category = await CategorySchema.findById(catagoryId);
+    const category = await UserCategorySchema.findById(catagoryId);
     const categoryname = category.categoryName;
 
     // subcategory

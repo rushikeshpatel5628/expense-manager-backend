@@ -27,6 +27,7 @@ const goalRoutes = require("./routes/GoalRoutes");
 const groupRoutes = require("./routes/GroupRoutes");
 const groupExpenseRoutes = require("./routes/GroupExpenseRoutes");
 const sharedCategoryRoutes= require("./routes/SharedCategoryRoutes");
+const UserCategory = require("./routes/UserCategoryRoutes")
 
 
 // providing to server all routes
@@ -35,6 +36,7 @@ app.use("/users", userRoutes);
 app.use("/roles", rolesRoutes);
 app.use("/categories", categoryRoutes);
 app.use("/categories", subcategoryRoutes);
+app.use("/usercategory", UserCategory);
 app.use("/payees", payeeRoutes);
 app.use("/transactions", transcationRoutes);
 app.use("/goals", goalRoutes);

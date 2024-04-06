@@ -17,7 +17,7 @@ const TransactionSchema = new Schema({
   },
   category: {
     type: Schema.Types.ObjectId,
-    ref: "Category",
+    ref: "UserCategory1",
   },
   // subcategory: {
   //   type: Schema.Types.ObjectId,

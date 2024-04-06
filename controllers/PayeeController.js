@@ -19,7 +19,7 @@ const getAllPayee = async (req, res) => {
 
 const getPayeeByUserId = async(req, res)=> {
   const userId = req.params.userId;
-  console.log("userid....", userId)
+  // console.log("userid....", userId)
   if (!userId) return res.status(400).json("No User Id provided");
   try {
     const payee = await PayeeSchema.find( {user: userId}).populate('user');
