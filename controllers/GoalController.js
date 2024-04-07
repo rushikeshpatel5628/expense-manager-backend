@@ -3,7 +3,7 @@ const TransactionSchema = require("../models/TransactionModel");
 
 const getAllGoals = async (req, res) => {
   try {
-    const goals = await GoalSchema.find();
+    const goals = await GoalSchema.find().populate('user');
 
     res.status(200).json({
       message: "Goals fetched",
@@ -22,7 +22,7 @@ const getAllGoals = async (req, res) => {
 const getGoalById = async (req, res) => {
   const id = req.params.id;
   try {
-    const goal = await GoalSchema.findById(id);
+    const goal = await GoalSchema.findById(id).populate('user');
     if (!goal) {
       return res.status(404).json({
         message: "No goals with this ID was found.",
@@ -44,10 +44,29 @@ const getGoalById = async (req, res) => {
 };
 
 const getGoalByUserId = async(req, res) => {
+  const userId = req.params.userId;
   try {
-    // const 
+    const goal = await GoalSchema.find({user: userId}) 
+    if (goal) {
+      res.status(200).json({
+        flah: 1,
+        message: "Goal with the given UserID is successfully fetched!",
+        data: goal
+      })
+    }else{
+      res.status(404).json({
+        flah: -1,
+        message: "No Goals are available for this User!",
+        data: goal
+      })
+    }
   } catch (error) {
-    
+    console.log("error: ", error)
+    res.status(500).json({
+      flah: -1,
+      message: "Internal server error",
+      data: error
+    })
   }
 }
 
@@ -114,6 +133,7 @@ const updateGoal = async (req, res) => {
 module.exports = {
   getAllGoals,
   getGoalById,
+  getGoalByUserId,
   addGoal,
   deleteGoal,
   updateGoal,

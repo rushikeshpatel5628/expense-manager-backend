@@ -75,6 +75,7 @@ const getAllTransactionsByGoal = async (req, res) => {
 
     if (transactions.length === 0) {
       return res.status(404).json({
+        flag: -1,
         message: "No transactions found for this goal ID.",
       });
     } else {

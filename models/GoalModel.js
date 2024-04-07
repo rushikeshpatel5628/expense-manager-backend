@@ -14,6 +14,10 @@ const GoalSchema = new Schema({
   },
   enddate: {
     type: Date,
+  },
+  user: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
   }
 });
 
