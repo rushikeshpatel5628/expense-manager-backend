@@ -1,7 +1,83 @@
+const multer = require('multer');
+const cloudinary = require('cloudinary').v2;
+const path = require('path');
+const fs = require('fs');
 const UserSchema = require("../models/UserModel");
 const encrypt = require("../utils/Encrypt");
 const mailUtil = require("../utils/Mailer");
 const OtpSchema = require("../models/OtpModel");
+
+
+// Multer configuration for file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/');
+  },
+  filename: function (req, file, cb) {
+    const ext = path.extname(file.originalname);
+    cb(null, file.fieldname + '-' + Date.now() + ext);
+  }
+});
+const upload = multer({ storage });
+
+// Cloudinary configuration
+cloudinary.config({
+  cloud_name: "dkwrhfiuw",
+  api_key: "458297586322389",
+  api_secret: "5Nr3M6QoyEOk9E5rPBoxKLWKoh0",
+});
+
+
+const updateUser = async (req, res) => {
+  const id = req.params.id;
+  try {
+
+    console.log("Request body:", req.body);
+    console.log("Request file:", req.file);
+
+    let updatedFields = req.body;
+    
+    // Check if profile picture is being updated
+    if (req.file) {
+      console.log("File uploaded:", req.file);
+
+      const result = await cloudinary.uploader.upload(req.file.path);
+      console.log("Cloudinary upload result:", result);
+
+      updatedFields.profilePicture = result.secure_url;
+
+      // Store file locally if needed
+      const oldPath = req.file.path;
+      const newPath = path.join(__dirname, '..', 'uploads', req.file.filename);
+      fs.renameSync(oldPath, newPath);
+    }
+
+    console.log("Updated fields:", updatedFields);
+
+    const updateUser = await UserSchema.findByIdAndUpdate(id, updatedFields, { new: true });
+    console.log("Updated user:", updateUser);
+
+    if (!updateUser) {
+      return res.status(404).json({
+        message: "No user with this ID was found.",
+      });
+    } else {
+      res.status(201).json({
+        message: "Updated user!",
+      });
+    }
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({
+      message: "Server Error",
+      flag: -1,
+      data: error,
+    });
+  }
+};
+
+
+
 
 const getAllUsers = async (req, res) => {
   try {
@@ -63,27 +139,27 @@ const addUser = async (req, res) => {
   }
 };
 
-const updateUser = async (req, res) => {
-  const id = req.params.id;
-  try {
-    const updateUser = await UserSchema.findByIdAndUpdate(id, req.body);
-    if (!updateUser) {
-      return res.status(404).json({
-        message: "No user with this ID was found.",
-      });
-    } else {
-      res.status(201).json({
-        message: "Updated user!",
-      });
-    }
-  } catch (error) {
-    res.status(500).json({
-      message: "Server Error",
-      flag: -1,
-      data: error,
-    });
-  }
-};
+// const updateUser = async (req, res) => {
+//   const id = req.params.id;
+//   try {
+//     const updateUser = await UserSchema.findByIdAndUpdate(id, req.body);
+//     if (!updateUser) {
+//       return res.status(404).json({
+//         message: "No user with this ID was found.",
+//       });
+//     } else {
+//       res.status(201).json({
+//         message: "Updated user!",
+//       });
+//     }
+//   } catch (error) {
+//     res.status(500).json({
+//       message: "Server Error",
+//       flag: -1,
+//       data: error,
+//     });
+//   }
+// };
 
 const deleteUser = async (req, res) => {
   const id = req.params.id;

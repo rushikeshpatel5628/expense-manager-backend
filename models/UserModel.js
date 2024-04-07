@@ -19,6 +19,10 @@ const UserSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref:  "Role",
   },
+  profilePicture: {
+    type: String,
+    default: ""
+  }
 });
 
 module.exports = mongoose.model("User", UserSchema);
