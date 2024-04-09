@@ -8,19 +8,7 @@ const mailUtil = require("../utils/Mailer");
 const OtpSchema = require("../models/OtpModel");
 
 
-// Multer configuration for file uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/');
-  },
-  filename: function (req, file, cb) {
-    const ext = path.extname(file.originalname);
-    cb(null, file.fieldname + '-' + Date.now() + ext);
-  }
-});
-const upload = multer({ storage });
 
-// Cloudinary configuration
 cloudinary.config({
   cloud_name: "dkwrhfiuw",
   api_key: "458297586322389",
@@ -28,44 +16,55 @@ cloudinary.config({
 });
 
 
+// Multer storage configuration
+const storage = multer.diskStorage({
+destination: function (req, file, cb) {
+  cb(null, 'uploads'); // Specify the directory where files will be stored
+},
+filename: function (req, file, cb) {
+  cb(null, Date.now() + '-' + file.originalname); // Append current timestamp to ensure file uniqueness
+}
+});
+
+// File filter to restrict uploads to images only
+const fileFilter = (req, file, cb) => {
+if (file.mimetype.startsWith('image/')) {
+  cb(null, true);
+} else {
+  cb(new Error('Only image files are allowed!'), false);
+}
+};
+
+// Initialize Multer with storage and file filter configuration
+const upload = multer({ storage: storage, fileFilter: fileFilter });
+
+
+
+
 const updateUser = async (req, res) => {
-  const id = req.params.id;
+  const userId = req.params.id;
   try {
 
-    console.log("Request body:", req.body);
-    console.log("Request file:", req.file);
-
-    let updatedFields = req.body;
-    
-    // Check if profile picture is being updated
+    const updatedData = req.body;
     if (req.file) {
-      console.log("File uploaded:", req.file);
-
+      // Upload file to Cloudinary
       const result = await cloudinary.uploader.upload(req.file.path);
-      console.log("Cloudinary upload result:", result);
 
-      updatedFields.profilePicture = result.secure_url;
+      // Update profile picture URL in updatedData
+      updatedData.profilePicture = result.secure_url;
 
-      // Store file locally if needed
-      const oldPath = req.file.path;
-      const newPath = path.join(__dirname, '..', 'uploads', req.file.filename);
-      fs.renameSync(oldPath, newPath);
+      // Delete the file from local storage after uploading to Cloudinary
+      // fs.unlinkSync(req.file.path);
     }
-
-    console.log("Updated fields:", updatedFields);
-
-    const updateUser = await UserSchema.findByIdAndUpdate(id, updatedFields, { new: true });
-    console.log("Updated user:", updateUser);
-
-    if (!updateUser) {
-      return res.status(404).json({
-        message: "No user with this ID was found.",
-      });
-    } else {
-      res.status(201).json({
-        message: "Updated user!",
-      });
+    const updatedUser = await UserSchema.findByIdAndUpdate(userId, updatedData, { new: true });
+    if (!updatedUser) {
+      return res.status(404).json({ message: "No user found with this ID" });
     }
+    res.status(200).json({
+      flag: 1,
+      message: "User updated successfully",
+      data: updatedUser,
+    });
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({
@@ -402,4 +401,5 @@ module.exports = {
   loginUser,
   isUserExist,
   resetPassword,
+  upload
 };
