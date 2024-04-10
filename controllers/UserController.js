@@ -1,13 +1,11 @@
-const multer = require('multer');
-const cloudinary = require('cloudinary').v2;
-const path = require('path');
-const fs = require('fs');
+const multer = require("multer");
+const cloudinary = require("cloudinary").v2;
+const path = require("path");
+const fs = require("fs");
 const UserSchema = require("../models/UserModel");
 const encrypt = require("../utils/Encrypt");
 const mailUtil = require("../utils/Mailer");
 const OtpSchema = require("../models/OtpModel");
-
-
 
 cloudinary.config({
   cloud_name: "dkwrhfiuw",
@@ -15,38 +13,36 @@ cloudinary.config({
   api_secret: "5Nr3M6QoyEOk9E5rPBoxKLWKoh0",
 });
 
-
 // Multer storage configuration
 const storage = multer.diskStorage({
-destination: function (req, file, cb) {
-  cb(null, 'uploads'); // Specify the directory where files will be stored
-},
-filename: function (req, file, cb) {
-  cb(null, Date.now() + '-' + file.originalname); // Append current timestamp to ensure file uniqueness
-}
+  destination: function (req, file, cb) {
+    cb(null, "uploads"); // Specify the directory where files will be stored
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + "-" + file.originalname); // Append current timestamp to ensure file uniqueness
+  },
 });
 
 // File filter to restrict uploads to images only
 const fileFilter = (req, file, cb) => {
-if (file.mimetype.startsWith('image/')) {
-  cb(null, true);
-} else {
-  cb(new Error('Only image files are allowed!'), false);
-}
+  if (file.mimetype.startsWith("image/")) {
+    cb(null, true);
+  } else {
+    cb(new Error("Only image files are allowed!"), false);
+  }
 };
 
 // Initialize Multer with storage and file filter configuration
 const upload = multer({ storage: storage, fileFilter: fileFilter });
 
-
-
-
 const updateUser = async (req, res) => {
   const userId = req.params.id;
   try {
-
     const updatedData = req.body;
-    if (req.file) {
+    // Exclude profilePicture field if no new picture uploaded
+    if (!req.file) {
+      delete updatedData.profilePicture;
+    } else {
       // Upload file to Cloudinary
       const result = await cloudinary.uploader.upload(req.file.path);
 
@@ -56,7 +52,12 @@ const updateUser = async (req, res) => {
       // Delete the file from local storage after uploading to Cloudinary
       // fs.unlinkSync(req.file.path);
     }
-    const updatedUser = await UserSchema.findByIdAndUpdate(userId, updatedData, { new: true });
+
+    const updatedUser = await UserSchema.findByIdAndUpdate(
+      userId,
+      updatedData,
+      { new: true }
+    );
     if (!updatedUser) {
       return res.status(404).json({ message: "No user found with this ID" });
     }
@@ -74,9 +75,6 @@ const updateUser = async (req, res) => {
     });
   }
 };
-
-
-
 
 const getAllUsers = async (req, res) => {
   try {
@@ -305,7 +303,7 @@ const resetPassword = async (req, res) => {
           message: "otp is expired!!",
           flag: -1,
         });
-      } else { 
+      } else {
         const hashedPassword = encrypt.encryptPassword(password);
 
         try {
@@ -349,7 +347,6 @@ const resetPassword = async (req, res) => {
   }
 };
 
-
 const isUserExist = async (req, res) => {
   const email = req.body.email;
 
@@ -373,7 +370,7 @@ const isUserExist = async (req, res) => {
         status: true,
       };
       await OtpSchema.create(otpObj);
-      console.log("otp....", otp)
+      console.log("otp....", otp);
       res.status(200).json({
         message: "User found",
         flag: 1,
@@ -401,5 +398,5 @@ module.exports = {
   loginUser,
   isUserExist,
   resetPassword,
-  upload
+  upload,
 };
