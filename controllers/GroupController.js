@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const GroupSchema = require("../models/GroupModel");
+const GroupExpenseSchema = require("../models/GroupExpense");
 const UserSchema = require("../models/UserModel");
 const { mailSend } = require("../utils/Mailer");
 
@@ -8,9 +9,9 @@ const createGroup = async (req, res) => {
     console.log("creator....", req.body.creator);
     const group = await GroupSchema.create({
       ...req.body,
-      members: [ req.body.creator ],
+      members: [req.body.creator],
     });
-    
+
     res.status(201).json({
       message: "Group created",
       flag: 1,
@@ -22,7 +23,7 @@ const createGroup = async (req, res) => {
       flag: -1,
       data: error,
     });
-    console.log("error....", error)
+    console.log("error....", error);
   }
 };
 
@@ -51,12 +52,15 @@ const getAllGroups = async (req, res) => {
 const getAllGroupsByUserId = async (req, res) => {
   const userId = req.params.id;
   try {
-    const groups = await GroupSchema.find({  $or: [{ creator: userId }, { members: userId }], })
+    const groups = await GroupSchema.find({
+      $or: [{ creator: userId }, { members: userId }],
+    })
       .populate({
         path: "creator",
       })
       .populate("expenses")
-      .populate("members").exec();
+      .populate("members")
+      .exec();
 
     res.status(200).json({
       message: "Groups fetched",
@@ -78,7 +82,8 @@ const getGroupById = async (req, res) => {
   try {
     const groups = await GroupSchema.findById(groupId)
       .populate("expenses")
-      .populate("members").exec();
+      .populate("members")
+      .exec();
 
     res.status(200).json({
       message: "Group fetched",
@@ -91,7 +96,7 @@ const getGroupById = async (req, res) => {
       flag: -1,
       data: error,
     });
-    console.log("error....", error)
+    console.log("error....", error);
   }
 };
 
@@ -106,9 +111,9 @@ const inviteUserToJoinGroup = async (req, res) => {
     // Fetch user ID by email
     const user = await UserSchema.findOne({ email });
 
-    if (!user) {
-      return res.status(404).json({ success: false, error: "User not found" });
-    }
+    // if (!user) {
+    //   return res.status(404).json({ success: false, error: "User not found" });
+    // }
 
     // Send invitation logic
     const userEmail = req.body.email;
@@ -121,7 +126,10 @@ const inviteUserToJoinGroup = async (req, res) => {
     <p>Group ID: ${groupId}</p>
   `;
     mailSend(userEmail, emailSubject, emailText, emailHtml);
-    res.status(200).json({flag: 1, message: `An invitation has been sent to ${userEmail}`});
+    res.status(200).json({
+      flag: 1,
+      message: `An invitation has been sent to ${userEmail}`,
+    });
   } catch (error) {
     console.error("Error sending invitation:", error);
     res.status(500).json({ flag: -1, error: "Internal Server Error" });
@@ -130,7 +138,7 @@ const inviteUserToJoinGroup = async (req, res) => {
 
 // Handle invitation
 const handleInvitation = async (req, res) => {
-  const userId  = req.params.userId;
+  const userId = req.params.userId;
   const groupId = req.body.groupId;
   try {
     // Add user to group members
@@ -157,7 +165,7 @@ const handleInvitation = async (req, res) => {
 const handleLeaveGroup = async (req, res) => {
   const { userId } = req.body;
   const { groupId } = req.params;
-  
+
   try {
     // Remove user from group members
     const group = await GroupSchema.findByIdAndUpdate(
@@ -170,22 +178,41 @@ const handleLeaveGroup = async (req, res) => {
       return res.status(404).json({ success: false, error: "Group not found" });
     }
 
-    res
-      .status(200)
-      .json({ success: true, message: "Left group successfully" });
+    res.status(200).json({ success: true, message: "Left group successfully" });
   } catch (error) {
     console.error("Error leaving group:", error);
     res.status(500).json({ success: false, error: "Internal Server Error" });
   }
 };
 
+// Delete group
+const deleteGroup = async (req, res) => {
+  const groupId = req.params.id;
+  try {
+    // Find and delete all expenses related to the group
+    await GroupExpenseSchema.deleteMany({ group: groupId });
+    const removedGroup = await GroupSchema.findByIdAndDelete(groupId);
+
+    if (!removedGroup) {
+      res.status(404).json({ message: "No group was found with this id" });
+    } else {
+      res.status(200).json({ message: "group deleted!!" });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "Server error",
+    });
+  }
+};
 
 module.exports = {
   getAllGroups,
   createGroup,
+  deleteGroup,
   inviteUserToJoinGroup,
   handleInvitation,
   handleLeaveGroup,
   getAllGroupsByUserId,
-  getGroupById
+  getGroupById,
 };

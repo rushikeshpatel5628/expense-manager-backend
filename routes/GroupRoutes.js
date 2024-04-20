@@ -7,5 +7,6 @@ router.post("/group", groupController.createGroup);
 router.post("/groups/:groupId/invite", groupController.inviteUserToJoinGroup);
 router.post("/join/:userId", groupController.handleInvitation);
 router.post("/:groupId/leave", groupController.handleLeaveGroup);
+router.delete("/group/:id", groupController.deleteGroup);
 
 module.exports = router;
