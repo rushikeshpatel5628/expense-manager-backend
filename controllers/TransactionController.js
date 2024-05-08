@@ -4,6 +4,7 @@ const PayeeSchema = require("../models/PayeeModel");
 const CategorySchema = require("../models/CategoryModel");
 const GoalSchema = require("../models/GoalModel");
 const UserCategorySchema = require("../models/UserCategoryModel");
+const mongoose = require("mongoose");
 // const SubCategorySchema = require("../models/SubCategoryModel");
 const { mailSend } = require("../utils/Mailer");
 
@@ -64,8 +65,6 @@ const getAllTransactionsByGoal = async (req, res) => {
   const goalId = req.params.id;
 
   try {
-    
-
     const transactions = await TransactionSchema.find({ goal: goalId })
       .populate("payee")
       .populate("category")
@@ -112,7 +111,6 @@ const addTransaction = async (req, res) => {
         description: req.body.description,
         transactionType: req.body.transactionType,
         user: req.body.user,
-        
       };
     } else {
       objectToSubmit = {
@@ -126,7 +124,7 @@ const addTransaction = async (req, res) => {
         description: req.body.description,
         transactionType: req.body.transactionType,
         user: req.body.user,
-        goal: req.body.goal
+        goal: req.body.goal,
       };
     }
 
@@ -218,16 +216,17 @@ const addTransaction = async (req, res) => {
 
     mailSend(userEmail, emailSubject, emailText, emailHtml);
 
-     // Check if the goal's maximum amount is exceeded
-     if (req.body.goal) {
+    // Check if the goal's maximum amount is exceeded
+    if (req.body.goal) {
       const goalId = req.body.goal;
       const goal = await GoalSchema.findById(goalId);
+      console.log("goal: ", goal);
       const totalSpent = await TransactionSchema.aggregate([
-        { $match: { goal: goalId } },
-        { $group: { _id: null, total: { $sum: "$amount" } } }
+        { $match: { goal: new mongoose.Types.ObjectId(goalId) } },
+        { $group: { _id: null, total: { $sum: "$amount" } } },
       ]);
       const totalAmountSpent = totalSpent.length > 0 ? totalSpent[0].total : 0;
-
+      console.log("total spent amount: ", totalSpent);
       if (totalAmountSpent > goal.maxamount) {
         // Send email to the user
         // const userEmail = userEmail; // Assuming user information is available in req.user
@@ -241,7 +240,7 @@ const addTransaction = async (req, res) => {
             </body>
           </html>
         `;
-        await sendEmail(userEmail, emailSubject, emailText, emailHtml);
+        await mailSend(userEmail, emailSubject, emailText, emailHtml);
       }
     }
 
@@ -338,7 +337,7 @@ const updateTransaction = async (req, res) => {
       description: req.body.description,
       transactionType: req.body.transactionType,
       user: req.body.user,
-      goal: req.body.goal
+      goal: req.body.goal,
     };
   }
 
@@ -364,7 +363,6 @@ const updateTransaction = async (req, res) => {
     });
   }
 };
-
 
 const deleteTransaction = async (req, res) => {
   const id = req.params.id;
