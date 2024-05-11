@@ -294,7 +294,7 @@ const resetPassword = async (req, res) => {
       //compsre for 30 seconds...
       const timeDifference = time - getUser.time;
       console.log("timeDifference....", timeDifference);
-      const is30SecondsGap = timeDifference >= 30000;
+      const is30SecondsGap = timeDifference >= 120000;
       console.log("is30SecondsGap....", is30SecondsGap);
       if (is30SecondsGap) {
         console.log("OTP is expired!!!");
