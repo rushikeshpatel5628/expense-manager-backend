@@ -5,7 +5,9 @@ const app = express();
 const PORT = 5000;
 
 // connecting to db
-var db = mongoose.connect("mongodb://127.0.0.1:27017/expensemanager");
+var db = mongoose.connect(
+  "mongodb+srv://ramanirushi123:rushipatel@cluster0.ypofumf.mongodb.net/expensemanager"
+);
 db.then(() => {
   console.log("connected to mongodb");
 }).catch((err) => {
@@ -26,9 +28,8 @@ const transcationRoutes = require("./routes/TransactionRoutes");
 const goalRoutes = require("./routes/GoalRoutes");
 const groupRoutes = require("./routes/GroupRoutes");
 const groupExpenseRoutes = require("./routes/GroupExpenseRoutes");
-const sharedCategoryRoutes= require("./routes/SharedCategoryRoutes");
-const UserCategory = require("./routes/UserCategoryRoutes")
-
+const sharedCategoryRoutes = require("./routes/SharedCategoryRoutes");
+const UserCategory = require("./routes/UserCategoryRoutes");
 
 // providing to server all routes
 app.use("/accounts", accountRoutes);
@@ -42,7 +43,7 @@ app.use("/transactions", transcationRoutes);
 app.use("/goals", goalRoutes);
 app.use("/groups", groupRoutes);
 app.use("/groupexp", groupExpenseRoutes);
-app.use("/shared-category", sharedCategoryRoutes)
+app.use("/shared-category", sharedCategoryRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
