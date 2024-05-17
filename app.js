@@ -8,6 +8,12 @@ const PORT = 5000;
 var db = mongoose.connect(
   "mongodb+srv://ramanirushi123:rushipatel@cluster0.ypofumf.mongodb.net/expensemanager"
 );
+
+// var db = mongoose.connect(
+//   "mongodb+srv://ramanirushi123:rushipatel@cluster0.ypofumf.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+// );
+
+// var db = mongoose.connect("mongodb://localhost:27017/expensemanager");
 db.then(() => {
   console.log("connected to mongodb");
 }).catch((err) => {

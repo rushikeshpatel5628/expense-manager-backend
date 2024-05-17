@@ -1,4 +1,4 @@
-const RoleSchema = require("../models/roleModel");
+const RoleSchema = require("../models/RoleModel");
 
 const getAllRoles = async (req, res) => {
   try {
